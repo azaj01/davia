@@ -1,0 +1,31 @@
+[project]
+name = "davia"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Ruben Illouz", email = "ruben@davia.ai" },
+    { name = "Afnan Khan", email = "afnan.khan@davia.ai" },
+    { name = "Theo Bazille", email = "theo.bazille@davia.ai" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi[standard]>=0.115.9",
+    "langchain-core>=0.3.40",
+    "langgraph>=0.3.1",
+    "typer>=0.15.1",
+]
+
+[project.scripts]
+davia = "davia.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+    "pytest>=8.3.4",
+    "ruff>=0.9.8",
+]
