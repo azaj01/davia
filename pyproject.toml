@@ -1,7 +1,7 @@
 [project]
 name = "davia"
 version = "0.1.0"
-description = "Add your description here"
+description = "A CLI tool for the no-code platform to test and deploy AI-native interfaces"
 readme = "README.md"
 authors = [
     { name = "Ruben Illouz", email = "ruben@davia.ai" },
@@ -13,6 +13,7 @@ dependencies = [
     "fastapi[standard]>=0.115.9",
     "langchain-core>=0.3.40",
     "langgraph>=0.3.1",
+    "langgraph-checkpoint>=2.0.16",
     "typer>=0.15.1",
 ]
 
@@ -29,3 +30,11 @@ dev = [
     "pytest>=8.3.4",
     "ruff>=0.9.8",
 ]
+langchain = [
+    "anthropic[vertex]>=0.48.0",
+    "langchain-google-vertexai>=2.0.14",
+    "langchain-openai>=0.3.7",
+]
+
+[tool.uv]
+default-groups = ["dev", "langchain"]
