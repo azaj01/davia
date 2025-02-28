@@ -5,7 +5,7 @@ import uvicorn
 import typer
 import threading
 
-from davia.utils import parse_path, load_module, patch_environment
+from davia.utils import parse_path, load_module, patch_environment, get_sqlite_path
 
 
 def load_graph(path: str) -> StateGraph:
@@ -75,8 +75,11 @@ def run_server(
                 pass
             time.sleep(0.1)
 
+    davia_sqlite_path = get_sqlite_path()
+
     with patch_environment(
         DAVIA_GRAPH=graph_path,
+        DAVIA_SQLITE_PATH=davia_sqlite_path,
     ):
         if open_browser:
             threading.Thread(target=_open_browser, daemon=True).start()

@@ -16,3 +16,7 @@ wheels/
 .DS_Store
 .DS_Store?
 ._*
+
+# Database files
+*.db
+*.sqlite

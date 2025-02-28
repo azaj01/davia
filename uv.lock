@@ -10,6 +10,18 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "aiosqlite"
+version = "0.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0d/3a/22ff5415bf4d296c1e92b07fd746ad42c96781f13295a074d58e77747848/aiosqlite-0.20.0.tar.gz", hash = "sha256:6d35c8c256637f4672f843c31021464090805bf925385ac39473fb16eaaca3d7", size = 21691 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/c4/c93eb22025a2de6b83263dfe3d7df2e19138e345bca6f18dba7394120930/aiosqlite-0.20.0-py3-none-any.whl", hash = "sha256:36a1deaca0cac40ebe32aac9977a6e2bbc7f5189f23f4a54d5908986729e5bd6", size = 15564 },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -246,7 +258,7 @@ dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "langchain-core" },
     { name = "langgraph" },
-    { name = "langgraph-checkpoint" },
+    { name = "langgraph-checkpoint-sqlite" },
     { name = "typer" },
 ]
 
@@ -267,7 +279,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.9" },
     { name = "langchain-core", specifier = ">=0.3.40" },
     { name = "langgraph", specifier = ">=0.3.1" },
-    { name = "langgraph-checkpoint", specifier = ">=2.0.16" },
+    { name = "langgraph-checkpoint-sqlite", specifier = ">=2.0.5" },
     { name = "typer", specifier = ">=0.15.1" },
 ]
 
@@ -928,6 +940,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/01/66/5d4a2013a84c511be289bb4a5ef91cbaad28c091b6b366fdb79710a1458b/langgraph_checkpoint-2.0.16.tar.gz", hash = "sha256:49ba8cfa12b2aae845ccc3b1fbd1d7a8d3a6c4a2e387ab3a92fca40dd3d4baa5", size = 34206 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7c/63/03bc3dd304ead45b53313cab8727329e1d139a2d220f2d030c72242c860e/langgraph_checkpoint-2.0.16-py3-none-any.whl", hash = "sha256:dfab51076a6eddb5f9e146cfe1b977e3dd6419168b2afa23ff3f4e47973bf06f", size = 38291 },
+]
+
+[[package]]
+name = "langgraph-checkpoint-sqlite"
+version = "2.0.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiosqlite" },
+    { name = "langgraph-checkpoint" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bb/8f/98c26f209d9023cff127000e133d75fd6d934b33db2739d0c32796297809/langgraph_checkpoint_sqlite-2.0.5.tar.gz", hash = "sha256:13e6b6f1149e7858b7ef16a4a8b1c86967961dad62b711d3eb1c35ede501d12c", size = 9564 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/3c/c05e04a3a175bc60afa24edc7a0693b694984f6925559dab6b7f8f9df7bb/langgraph_checkpoint_sqlite-2.0.5-py3-none-any.whl", hash = "sha256:479a1851d5e91c1e15b95ca54cc75c9bd60896824c21f559dac2eaa10e49453f", size = 12763 },
 ]
 
 [[package]]
