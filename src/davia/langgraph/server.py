@@ -2,12 +2,14 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from davia.langgraph.ai_sdk import ChatRequest, stream_graph
-from davia.langgraph.launcher import load_graph
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 import sqlite3
 from pydantic import BaseModel
+import traceback
 
+from davia.utils import get_schema_tree, process_graph_state
+from davia.langgraph.ai_sdk import ChatRequest, stream_graph
+from davia.langgraph.launcher import load_graph
 
 app = FastAPI()
 
@@ -33,25 +35,40 @@ def ok():
 @app.post("/chat")
 async def chat(request: ChatRequest):
     workflow = load_graph(os.environ["DAVIA_GRAPH"])
-    print(request)
-    # You can use the checkpointer here if needed
     response = StreamingResponse(stream_graph(workflow, request))
     response.headers["x-vercel-ai-data-stream"] = "v1"
     return response
 
 
-@app.post("/get_state")
+@app.get("/get_state/{thread_id}")
 async def get_state(thread_id: str):
-    from rich import print
-
     workflow = load_graph(os.environ["DAVIA_GRAPH"])
+    state_map = await get_state_map()
     async with AsyncSqliteSaver.from_conn_string(
         os.environ["DAVIA_SQLITE_PATH"]
     ) as checkpointer:
         graph = workflow.compile(checkpointer=checkpointer)
         config = {"configurable": {"thread_id": thread_id}}
-        print(await graph.aget_state(config))
-    return 0
+        state = await graph.aget_state(config)
+    if state.values:
+        graph_state, messages = process_graph_state(state_map["messages_path"], state)
+        messages = [message.to_json() for message in messages]
+        return {"graphState": graph_state, "messages": messages}
+    else:
+        return {"graphState": {}, "messages": []}
+
+
+@app.get("/get_state_schema")
+async def get_state_schema():
+    workflow = load_graph(os.environ["DAVIA_GRAPH"])
+    try:
+        schema = get_schema_tree(workflow.schema)
+        return schema
+    except TypeError as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=e)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 class StateMapResponse(BaseModel):
@@ -103,8 +120,12 @@ async def get_state_map():
             conn.close()
 
 
-@app.post("/create_state_map", status_code=201)
-async def create_state_map(messages_path: str):
+class SetStateMapRequest(BaseModel):
+    messages_path: str
+
+
+@app.post("/set_state_map", status_code=201)
+async def set_state_map(request: SetStateMapRequest):
     """
     Create or update a mapping between a graph_name and a messages_path.
 
@@ -131,7 +152,7 @@ async def create_state_map(messages_path: str):
         # Insert or replace the mapping
         cursor.execute(
             "INSERT OR REPLACE INTO graph_state_maps (graph_name, messages_path) VALUES (?, ?)",
-            (os.environ["DAVIA_GRAPH"], messages_path),
+            (os.environ["DAVIA_GRAPH"], request.messages_path),
         )
 
         conn.commit()
