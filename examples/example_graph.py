@@ -4,15 +4,29 @@ from langchain_google_vertexai import ChatVertexAI
 from langchain_google_vertexai.model_garden import ChatAnthropicVertex
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.types import interrupt
+from typing import TypedDict, Optional
+
+
+class Joke(TypedDict):
+    setup: str
+    punchline: str
+    rating: Optional[int]
 
 
 class CustomState(MessagesState):
-    pass
+    joke: Joke
 
 
 @tool
 def get_weather(location: str):
     """Call to get the current weather."""
+    value = interrupt(
+        # Any JSON serializable value to surface to the human.
+        # For example, a question or a piece of text or a set of keys in the state
+        {"text_to_revise": "Hello"}
+    )
+    print(value)
     if location.lower() in ["sf", "san francisco"]:
         return "It's 60 degrees and foggy."
     else:
@@ -55,7 +69,7 @@ def should_continue(state: CustomState):
 def call_model(state: CustomState):
     messages = state["messages"]
     response = model_with_tools.invoke(messages)
-    return {"messages": [response]}
+    return {"messages": [response], "joke": {"setup": "Hello", "punchline": "World"}}
 
 
 workflow = StateGraph(CustomState)

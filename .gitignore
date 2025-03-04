@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
+.mypy_cache/
 
 # Virtual environments
 .venv
@@ -20,3 +21,7 @@ wheels/
 # Database files
 *.db
 *.sqlite
+
+# LangGraph files
+langgraph.json
+.langgraph_api/
