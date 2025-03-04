@@ -80,7 +80,7 @@ def dev(
     Start the development server for your LangGraph application.
     """
     local_url = f"http://{host}:{port}"
-    preview_url = f"http://localhost:3000?entrypoint={local_url}"
+    preview_url = f"https://sandbox.davia.ai?entrypoint={local_url}"
 
     def _open_browser():
         import time
