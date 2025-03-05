@@ -1,14 +1,12 @@
 [project]
 name = "davia"
 version = "0.1.0"
-description = "A CLI tool for the no-code platform to test and deploy AI-native interfaces"
+description = "A CLI tool for the Davia no-code platform to test and deploy AI-native interfaces"
 readme = "README.md"
-authors = [
-    { name = "Ruben Illouz", email = "ruben@davia.ai" },
-    { name = "Afnan Khan", email = "afnan.khan@davia.ai" },
-    { name = "Theo Bazille", email = "theo.bazille@davia.ai" }
-]
+authors = [{ name = "Davia", email = "contact@davia.ai" }]
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "langchain-core>=0.3.40",
     "langgraph>=0.3.2",
