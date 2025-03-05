@@ -1,65 +1,37 @@
-import os
-import sys
-from langgraph.graph import StateGraph
 import uvicorn
 import typer
+from pathlib import Path
+import json
+from rich import print
+from dotenv import load_dotenv
 import threading
-
-from davia.utils import parse_path, load_module, patch_environment, get_sqlite_path
-
-
-def load_graph(path: str) -> StateGraph:
-    """
-    Load a StateGraph from a path string.
-
-    Args:
-        path: A string in the format "module.path:state_graph_name" or "file:state_graph_name"
-
-    Returns:
-        The loaded StateGraph
-
-    Raises:
-        ValueError: If the path format is invalid
-        ImportError: If the file or module cannot be imported
-        AttributeError: If the variable does not exist in the file or module
-        TypeError: If the variable is not a StateGraph
-    """
-    module_path, variable_name = parse_path(path)
-
-    # Add the current directory to sys.path if it's not already there
-    cwd = os.getcwd()
-    if cwd not in sys.path:
-        sys.path.insert(0, cwd)
-
-    # Load the module
-    module = load_module(module_path)
-
-    # Get the variable from the module
-    if not hasattr(module, variable_name):
-        raise AttributeError(
-            f"Module {module_path} does not have a variable named {variable_name}"
-        )
-
-    graph = getattr(module, variable_name)
-
-    # Check if the variable is a StateGraph
-    if not isinstance(graph, StateGraph):
-        raise TypeError(
-            f"Variable {variable_name} in module {module_path} is not a StateGraph"
-        )
-
-    return graph
+from langgraph_cli.config import validate_config_file
+from langgraph_api.cli import patch_environment
 
 
 def run_server(
-    graph_path: str,
     host: str = "127.0.0.1",
     port: int = 2025,
-    reload: bool = True,
-    open_browser: bool = True,
+    reload: bool = False,
+    config: Path = "langgraph.json",
+    n_jobs_per_worker: int | None = None,
+    browser: bool = False,
 ):
     local_url = f"http://{host}:{port}"
     preview_url = f"https://sandbox.davia.ai?entrypoint={local_url}"
+
+    print(f"""
+        Welcome to
+▗▄▄▄   ▗▄▖ ▗▖  ▗▖▗▄▄▄▖ ▗▄▖ 
+▐▌  █ ▐▌ ▐▌▐▌  ▐▌  █  ▐▌ ▐▌
+▐▌  █ ▐▛▀▜▌▐▌  ▐▌  █  ▐▛▀▜▌
+▐▙▄▄▀ ▐▌ ▐▌ ▝▚▞▘ ▗▄█▄▖▐▌ ▐▌
+
+- 🎨 UI: {preview_url}
+""")
+    config_json = validate_config_file(Path(config))
+
+    graphs = config_json.get("graphs", {})
 
     def _open_browser():
         import time
@@ -75,13 +47,43 @@ def run_server(
                 pass
             time.sleep(0.1)
 
-    davia_sqlite_path = get_sqlite_path()
+    if browser:
+        threading.Thread(target=_open_browser, daemon=True).start()
 
     with patch_environment(
-        DAVIA_GRAPH=graph_path,
-        DAVIA_SQLITE_PATH=davia_sqlite_path,
+        MIGRATIONS_PATH="__inmem",
+        DATABASE_URI=":memory:",
+        REDIS_URI="fake",
+        N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
+        LANGSERVE_GRAPHS=json.dumps(graphs) if graphs else None,
+        LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
+        # See https://developer.chrome.com/blog/private-network-access-update-2024-03
+        ALLOW_PRIVATE_NETWORK="true",
     ):
-        if open_browser:
-            threading.Thread(target=_open_browser, daemon=True).start()
-
-        uvicorn.run("davia.langgraph.server:app", host=host, port=port, reload=reload)
+        load_dotenv()
+        uvicorn.run(
+            "langgraph_api.server:app",
+            host=host,
+            port=port,
+            reload=reload,
+            log_level="warning",
+            access_log=False,
+            log_config={
+                "version": 1,
+                "incremental": False,
+                "disable_existing_loggers": False,
+                "formatters": {
+                    "simple": {
+                        "class": "langgraph_api.logging.Formatter",
+                    }
+                },
+                "handlers": {
+                    "console": {
+                        "class": "logging.StreamHandler",
+                        "formatter": "simple",
+                        "stream": "ext://sys.stdout",
+                    }
+                },
+                "root": {"handlers": ["console"]},
+            },
+        )
