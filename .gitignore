@@ -25,3 +25,6 @@ wheels/
 # LangGraph files
 langgraph.json
 .langgraph_api/
+
+# Examples
+examples/
