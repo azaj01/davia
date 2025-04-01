@@ -8,6 +8,7 @@ from davia.app.application import Davia
 from davia.langgraph.__inmem import register_all_tasks, register_all_graphs
 import typer
 import threading
+import os
 
 
 def run_server(
@@ -51,7 +52,7 @@ def run_server(
 """)
 
     filtered_graphs = {
-        name: f"{graph_data['source_file']}:{name}"
+        name: f"{os.path.abspath(graph_data['source_file'])}:{name}"
         for name, graph_data in app.graphs.items()
     }
 
