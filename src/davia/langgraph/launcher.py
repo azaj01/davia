@@ -19,7 +19,7 @@ def run_server(
     browser: bool = True,
 ):
     local_url = f"http://{host}:{port}"
-    preview_url = f"https://dev.davia.ai?entrypoint={local_url}"
+    preview_url = f"https://dev.davia.ai/dashboard?entrypoint={local_url}"
 
     # TODO: Add a way to reload the server without restarting the application
     reload = False
