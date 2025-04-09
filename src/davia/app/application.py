@@ -107,42 +107,18 @@ class Davia:
         """
 
         def decorator(func):
-            # Get function metadata
-            sig = inspect.signature(func)
-
             # Get source file information
             source_file = inspect.getsourcefile(func)
             if source_file:
                 source_file = os.path.relpath(source_file)
 
-            # Create the graph instance
-            graph_instance = func()
-
             # Store graph with metadata
             self.graphs[func.__name__] = {
-                "function": func,
-                "graph": graph_instance,  # Store the actual graph instance
-                "docstring": func.__doc__,
                 "source_file": source_file,  # Store the source file
-                "parameters": {
-                    name: {
-                        "type": param.annotation
-                        if param.annotation != inspect.Parameter.empty
-                        else None,
-                        "default": param.default
-                        if param.default != inspect.Parameter.empty
-                        else None,
-                        "kind": str(param.kind),
-                    }
-                    for name, param in sig.parameters.items()
-                },
-                "return_type": sig.return_annotation
-                if sig.return_annotation != inspect.Parameter.empty
-                else None,
             }
 
             # Return the graph instance for direct access
-            return graph_instance
+            return func
 
         return decorator
 

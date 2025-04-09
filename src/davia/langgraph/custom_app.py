@@ -5,6 +5,10 @@ from dataclasses import fields, is_dataclass
 from typing_extensions import Annotated
 from davia.langgraph.__inmem import get_all_tasks, get_all_graphs
 import httpx
+import os
+import json
+import importlib.util
+import inspect
 
 
 app = FastAPI()
@@ -137,20 +141,74 @@ async def task_schemas():
     return result
 
 
+def inspect_function_from_path(path: str) -> dict:
+    """Inspect a function from its path string (module:function)."""
+    try:
+        # Split the path into module path and function name
+        module_path, function_name = path.split(":")
+
+        # Convert to absolute path if needed
+        if not os.path.isabs(module_path):
+            module_path = os.path.abspath(module_path)
+
+        # Create a module spec
+        spec = importlib.util.spec_from_file_location("module", module_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Could not load module from {module_path}")
+
+        # Load the module
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Get the function object itself
+        func = getattr(module, function_name)
+        if not callable(func):
+            raise ValueError(f"{function_name} is not a callable object")
+
+        # If the function is a graph function, get the original function
+        if hasattr(func, "__wrapped__"):
+            func = func.__wrapped__
+
+        # Get function metadata
+        docstring = inspect.getdoc(func)
+
+        # Get source file information
+        source_file = inspect.getsourcefile(func)
+        if source_file:
+            source_file = os.path.relpath(source_file)
+
+        return {
+            "name": function_name,
+            "docstring": docstring,
+            "source_file": source_file,
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "name": None,
+            "docstring": None,
+            "source_file": None,
+        }
+
+
 @app.get("/graph-schemas")
 async def graph_schemas(request: Request):
     """Get all registered graph schemas with their complete information."""
-    graphs = get_all_graphs()
     host = request.base_url.hostname
     port = request.base_url.port
     url = f"http://{host}:{port}"
 
+    graphs = json.loads(os.getenv("LANGSERVE_GRAPHS"))
+
+    graphs_metadata = {}
+    for name, path in graphs.items():
+        # Inspect the function
+        function_info = inspect_function_from_path(path)
+        graphs_metadata[name] = function_info
+
     async with httpx.AsyncClient() as client:
         response = await client.post(f"{url}/assistants/search", json={})
         assistants_data = response.json()
-
-    # Get all graph IDs from get_all_graphs()
-    graph_ids = set(graphs.keys())
 
     # Sort all assistants by updated_at in descending order
     sorted_assistants = sorted(
@@ -161,31 +219,32 @@ async def graph_schemas(request: Request):
     latest_assistants = {}
     for assistant in sorted_assistants:
         if (
-            assistant["graph_id"] in graph_ids
+            assistant["graph_id"] in graphs.keys()
             and assistant["graph_id"] not in latest_assistants
         ):
             latest_assistants[assistant["graph_id"]] = assistant
 
-    # Fetch schemas for each assistant and associate them with their graphs
+    graph_schemas = {}
     async with httpx.AsyncClient() as client:
-        for assistant in sorted_assistants:
+        for assistant in latest_assistants.values():
             response = await client.get(
                 f"{url}/assistants/{assistant['assistant_id']}/schemas"
             )
             graph_id = assistant["graph_id"]
-            if graph_id in graphs:
-                graphs[graph_id]["assistant_schema"] = response.json()["state_schema"]
-
-    # Convert the result to a dictionary format
-    result = [
+            if graph_id in graphs.keys():
+                graph_schemas[graph_id] = {
+                    "assistant_schema": response.json()["state_schema"]
+                }
+            # add the metadata to the graph_schemas
+            graph_schemas[graph_id]["metadata"] = graphs_metadata[graph_id]
+    # return under the appropriate schema : Schema
+    return [
         Schema(
-            docstring=graph.get("docstring"),
-            source_file=graph.get("source_file"),
-            user_state_snapshot=graph.get("assistant_schema"),
+            name=graph_id,
+            docstring=graph_schemas[graph_id]["metadata"]["docstring"],
+            source_file=graph_schemas[graph_id]["metadata"]["source_file"],
+            user_state_snapshot=graph_schemas[graph_id]["assistant_schema"],
             kind="graph",
-            name=name,
-        ).model_dump()
-        for name, graph in graphs.items()
+        )
+        for graph_id in graph_schemas.keys()
     ]
-
-    return result

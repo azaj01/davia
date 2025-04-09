@@ -22,7 +22,7 @@ def run_server(
     preview_url = "https://dev.davia.ai/dashboard"
 
     # TODO: Add a way to reload the server without restarting the application
-    reload = False
+    reload = True
 
     def _open_browser():
         import time
@@ -55,15 +55,9 @@ def run_server(
         name: f"{os.path.abspath(graph_data['source_file'])}:{name}"
         for name, graph_data in app.graphs.items()
     }
-
     tasks = app.tasks
-    graphs = app.graphs
+
     register_all_tasks(tasks)
-    register_all_graphs(graphs)
-
-    graphs_from_tasks = {task: f"davia.langgraph.__inmem:{task}" for task in tasks}
-
-    combined_graphs = {**filtered_graphs, **graphs_from_tasks}
 
     # Get the absolute path to launcher_graph.py
     current_file_path = Path(__file__).resolve()
@@ -79,7 +73,7 @@ def run_server(
         DATABASE_URI=":memory:",
         REDIS_URI="fake",
         N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
-        LANGSERVE_GRAPHS=json.dumps(combined_graphs) if combined_graphs else None,
+        LANGSERVE_GRAPHS=json.dumps(filtered_graphs) if filtered_graphs else None,
         LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
         LANGGRAPH_HTTP=json.dumps(http) if http else None,
         # See https://developer.chrome.com/blog/private-network-access-update-2024-03
