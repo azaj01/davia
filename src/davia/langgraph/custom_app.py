@@ -150,7 +150,12 @@ def inspect_function_from_path(path: str) -> dict:
     try:
         # Get the function object
         func = get_function_from_path(path)
-        function_name = path.split(":")[-1]
+        last_colon_index = path.rfind(":")
+        if last_colon_index == -1:
+            raise ValueError(
+                f"Invalid path format: {path}. Expected format: module:function"
+            )
+        function_name = path[last_colon_index + 1 :]
 
         # If the function is a graph function, get the original function
         if hasattr(func, "__wrapped__"):
