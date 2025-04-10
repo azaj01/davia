@@ -113,8 +113,16 @@ class Schema(BaseModel):
 
 def get_function_from_path(path: str) -> Callable:
     """Get a function from its path string (module:function)."""
-    # Split the path into module path and function name
-    module_path, function_name = path.split(":")
+    # Split the path into module path and function name, using the last colon as separator
+    # This handles Windows paths that contain drive letters (e.g., C:\path\to\module:function)
+    last_colon_index = path.rfind(":")
+    if last_colon_index == -1:
+        raise ValueError(
+            f"Invalid path format: {path}. Expected format: module:function"
+        )
+
+    module_path = path[:last_colon_index]
+    function_name = path[last_colon_index + 1 :]
 
     # Convert to absolute path if needed
     if not os.path.isabs(module_path):
