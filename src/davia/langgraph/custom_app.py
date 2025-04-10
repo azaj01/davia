@@ -8,6 +8,7 @@ import os
 import json
 import importlib.util
 import inspect
+from pathlib import Path
 
 
 app = FastAPI()
@@ -117,7 +118,7 @@ def get_function_from_path(path: str) -> Callable:
 
     # Convert to absolute path if needed
     if not os.path.isabs(module_path):
-        module_path = os.path.abspath(module_path)
+        module_path = str(Path(module_path).resolve())
 
     # Create a module spec
     spec = importlib.util.spec_from_file_location("module", module_path)
@@ -192,7 +193,7 @@ def inspect_function_from_path(path: str) -> dict:
 @app.get("/task-schemas")
 async def task_schemas():
     """Get all registered task schemas with their complete information."""
-    tasks = json.loads(os.getenv("TASKS"))
+    tasks = json.loads(os.environ.get("TASKS", "{}"))
 
     task_schemas = []
     for name, task_info in tasks.items():
@@ -267,7 +268,7 @@ async def graph_schemas(request: Request):
     port = request.base_url.port
     url = f"http://{host}:{port}"
 
-    graphs = json.loads(os.getenv("LANGSERVE_GRAPHS"))
+    graphs = json.loads(os.environ.get("LANGSERVE_GRAPHS", "{}"))
 
     graphs_metadata = {}
     for name, path in graphs.items():

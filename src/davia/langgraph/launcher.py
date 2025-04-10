@@ -4,11 +4,10 @@ import json
 from rich import print
 from dotenv import load_dotenv
 from langgraph_api.cli import patch_environment
-from davia.app.application import Davia
-
 import typer
 import threading
-import os
+
+from davia.app.application import Davia
 
 
 def run_server(
@@ -50,7 +49,7 @@ def run_server(
 """)
 
     filtered_graphs = {
-        name: f"{os.path.abspath(graph_data['source_file'])}:{name}"
+        name: f"{Path(graph_data['source_file']).resolve().as_posix()}:{name}"
         for name, graph_data in app.graphs.items()
     }
     tasks = app.tasks
@@ -62,7 +61,7 @@ def run_server(
     # Get the absolute path to custom_app.py in the same directory
     custom_app_path = current_dir / "custom_app.py"
 
-    http = {"app": str(custom_app_path) + ":app"}
+    http = {"app": f"{custom_app_path.resolve().as_posix()}:app"}
 
     with patch_environment(
         MIGRATIONS_PATH="__inmem",
