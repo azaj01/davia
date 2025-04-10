@@ -1,9 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any, Optional, get_origin, get_args, Union, Literal
+from typing import Dict, Any, Optional, get_origin, get_args, Union, Literal, Callable
 from dataclasses import fields, is_dataclass
 from typing_extensions import Annotated
-from davia.langgraph.__inmem import get_all_tasks, get_all_graphs
 import httpx
 import os
 import json
@@ -111,59 +110,38 @@ class Schema(BaseModel):
     kind: Literal["task", "graph"]
 
 
-@app.get("/task-schemas")
-async def task_schemas():
-    """Get all registered task schemas with their complete information."""
-    tasks = get_all_tasks()
-    result = []
-    for name, task in tasks.items():
-        # Convert the task information to a structured format
-        task_info = {
-            "docstring": task.get("docstring"),
-            "source_file": task.get("source_file"),
-            "user_state_snapshot": {
-                "parameters": {
-                    param_name: {
-                        "type": convert_type_to_str(param_info.get("type")),
-                        "default": param_info.get("default"),
-                    }
-                    for param_name, param_info in task.get("parameters", {}).items()
-                },
-                "return_type": convert_type_to_str(task.get("return_type")),
-            },
-            "kind": "task",
-            "name": name,
-        }
+def get_function_from_path(path: str) -> Callable:
+    """Get a function from its path string (module:function)."""
+    # Split the path into module path and function name
+    module_path, function_name = path.split(":")
 
-        # Create the TaskSchema instance with the structured data
-        result.append(Schema(**task_info).model_dump())
+    # Convert to absolute path if needed
+    if not os.path.isabs(module_path):
+        module_path = os.path.abspath(module_path)
 
-    return result
+    # Create a module spec
+    spec = importlib.util.spec_from_file_location("module", module_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module from {module_path}")
+
+    # Load the module
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # Get the function object itself
+    func = getattr(module, function_name)
+    if not callable(func):
+        raise ValueError(f"{function_name} is not a callable object")
+
+    return func
 
 
 def inspect_function_from_path(path: str) -> dict:
     """Inspect a function from its path string (module:function)."""
     try:
-        # Split the path into module path and function name
-        module_path, function_name = path.split(":")
-
-        # Convert to absolute path if needed
-        if not os.path.isabs(module_path):
-            module_path = os.path.abspath(module_path)
-
-        # Create a module spec
-        spec = importlib.util.spec_from_file_location("module", module_path)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Could not load module from {module_path}")
-
-        # Load the module
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        # Get the function object itself
-        func = getattr(module, function_name)
-        if not callable(func):
-            raise ValueError(f"{function_name} is not a callable object")
+        # Get the function object
+        func = get_function_from_path(path)
+        function_name = path.split(":")[-1]
 
         # If the function is a graph function, get the original function
         if hasattr(func, "__wrapped__"):
@@ -177,10 +155,28 @@ def inspect_function_from_path(path: str) -> dict:
         if source_file:
             source_file = os.path.relpath(source_file)
 
+        # Get function signature
+        signature = inspect.signature(func)
+
+        # Get input parameters
+        parameters = {}
+        for name, param in signature.parameters.items():
+            if param.annotation != inspect.Parameter.empty:
+                parameters[name] = convert_type_to_str(param.annotation)
+            else:
+                parameters[name] = {"type": "Any"}
+
+        # Get return type
+        return_type = {"type": "Any"}
+        if signature.return_annotation != inspect.Signature.empty:
+            return_type = convert_type_to_str(signature.return_annotation)
+
         return {
             "name": function_name,
             "docstring": docstring,
             "source_file": source_file,
+            "parameters": parameters,
+            "return_type": return_type,
         }
     except Exception as e:
         return {
@@ -188,7 +184,80 @@ def inspect_function_from_path(path: str) -> dict:
             "name": None,
             "docstring": None,
             "source_file": None,
+            "parameters": {},
+            "return_type": {"type": "Any"},
         }
+
+
+@app.get("/task-schemas")
+async def task_schemas():
+    """Get all registered task schemas with their complete information."""
+    tasks = json.loads(os.getenv("TASKS"))
+
+    task_schemas = []
+    for name, task_info in tasks.items():
+        # Get the source file from the task info
+        source_file = task_info.get("source_file")
+
+        # Get function info from the source file
+        function_info = inspect_function_from_path(f"{source_file}:{name}")
+
+        # Create user state snapshot with type information
+        user_state_snapshot = {
+            "input": function_info["parameters"],
+            "output": function_info["return_type"],
+        }
+
+        task_schemas.append(
+            Schema(
+                name=name,
+                docstring=function_info["docstring"],
+                source_file=function_info["source_file"],
+                user_state_snapshot=user_state_snapshot,
+                kind="task",
+            )
+        )
+    return task_schemas
+
+
+@app.post("/task/{task_name}")
+async def task(request: Request, task_name: str):
+    """Execute a task with the given name and parameters."""
+
+    # Get tasks from environment
+    tasks = json.loads(os.getenv("TASKS"))
+
+    # Check if task exists
+    if task_name not in tasks:
+        raise HTTPException(status_code=404, detail=f"Task '{task_name}' not found")
+
+    # Get task info
+    task_info = tasks[task_name]
+    source_file = task_info.get("source_file")
+
+    # Get the function
+    func = get_function_from_path(f"{source_file}:{task_name}")
+
+    # Get the request body
+    body = await request.json()
+
+    try:
+        # Get function signature for validation
+        signature = inspect.signature(func)
+
+        # Validate input parameters
+        for param_name, param in signature.parameters.items():
+            if param_name not in body and param.default == inspect.Parameter.empty:
+                raise HTTPException(
+                    status_code=400, detail=f"Missing required parameter: {param_name}"
+                )
+
+        # Execute the function
+        result = func(**body)
+
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error executing task: {str(e)}")
 
 
 @app.get("/graph-schemas")

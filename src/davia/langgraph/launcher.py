@@ -5,7 +5,7 @@ from rich import print
 from dotenv import load_dotenv
 from langgraph_api.cli import patch_environment
 from davia.app.application import Davia
-from davia.langgraph.__inmem import register_all_tasks, register_all_graphs
+
 import typer
 import threading
 import os
@@ -17,12 +17,10 @@ def run_server(
     port: int = 2025,
     n_jobs_per_worker: int = 1,
     browser: bool = True,
+    reload: bool = True,
 ):
     local_url = f"http://{host}:{port}"
     preview_url = "https://dev.davia.ai/dashboard"
-
-    # TODO: Add a way to reload the server without restarting the application
-    reload = True
 
     def _open_browser():
         import time
@@ -57,8 +55,6 @@ def run_server(
     }
     tasks = app.tasks
 
-    register_all_tasks(tasks)
-
     # Get the absolute path to launcher_graph.py
     current_file_path = Path(__file__).resolve()
     # Get the directory containing launcher_graph.py
@@ -74,6 +70,7 @@ def run_server(
         REDIS_URI="fake",
         N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
         LANGSERVE_GRAPHS=json.dumps(filtered_graphs) if filtered_graphs else None,
+        TASKS=json.dumps(tasks) if tasks else None,
         LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
         LANGGRAPH_HTTP=json.dumps(http) if http else None,
         # See https://developer.chrome.com/blog/private-network-access-update-2024-03
