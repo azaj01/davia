@@ -12,6 +12,7 @@ dependencies = [
     "langchain-core>=0.3.40",
     "langgraph>=0.3.2",
     "langgraph-cli[inmem]>=0.1.74",
+    "langgraph_api==0.0.38",
     "typer>=0.15.1",
 ]
 

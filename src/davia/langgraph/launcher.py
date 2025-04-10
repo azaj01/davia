@@ -72,9 +72,6 @@ def run_server(
         TASKS=json.dumps(tasks) if tasks else None,
         LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
         LANGGRAPH_HTTP=json.dumps(http) if http else None,
-        LANGGRAPH_DISABLE_FILE_PERSISTENCE=str(False).lower(),
-        LANGGRAPH_RUNTIME_EDITION="inmem",
-        LANGGRAPH_ALLOW_BLOCKING=str(True).lower(),
         # See https://developer.chrome.com/blog/private-network-access-update-2024-03
         ALLOW_PRIVATE_NETWORK="true",
     ):
