@@ -1,18 +1,29 @@
-import inspect
-from typing import Dict, Any, TypedDict, get_type_hints
-from langgraph.graph import StateGraph, START, END
 import os
+import inspect
+from fastapi import FastAPI
+from davia.routers import router
 
 
-class Davia:
+class Davia(FastAPI):
     """
-    Main application class that hold all registered subobjects
+    Main application class that holds all tasks and graphs
+
+    Read more in the [Davia docs](https://docs.davia.ai/introduction).
+
+    ## Example
+
+    ```python
+    from davia import Davia
+
+    app = Davia(title="My App", description="My App Description")
+    ```
     """
 
-    def __init__(self, name: str = "davia"):
-        self.name = name
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.tasks = {}
         self.graphs = {}
+        self.include_router(router)
 
     @property
     def task(self):
@@ -69,31 +80,3 @@ class Davia:
             return func
 
         return decorator
-
-    def list_tasks(self):
-        """
-        List all registered tasks
-        """
-        return list(self.tasks.keys())
-
-    def list_graphs(self):
-        """
-        List all registered graphs
-        """
-        return list(self.graphs.keys())
-
-    def get_task_info(self, task_name: str) -> Dict[str, Any]:
-        """
-        Get detailed information about a task including its parameters and docstring.
-        """
-        if task_name not in self.tasks:
-            raise KeyError(f"Task '{task_name}' not found")
-        return self.tasks[task_name]
-
-    def get_graph_info(self, graph_name: str) -> Dict[str, Any]:
-        """
-        Get detailed information about a graph including its parameters and docstring.
-        """
-        if graph_name not in self.graphs:
-            raise KeyError(f"Graph '{graph_name}' not found")
-        return self.graphs[graph_name]
