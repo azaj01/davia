@@ -1,18 +1,58 @@
-import inspect
-from typing import Dict, Any, TypedDict, get_type_hints
-from langgraph.graph import StateGraph, START, END
 import os
+import inspect
+from fastapi import FastAPI
+from davia.routers import router
+import pickle
+from contextlib import asynccontextmanager
 
 
-class Davia:
+@asynccontextmanager
+async def custom_lifespan(app: FastAPI):
+    # Initialize shared state
+    app.state.global_mem = {}
+
+    # Load state from pickle file if it exists
+    if os.path.exists("./app_state.pickle"):
+        try:
+            with open("./app_state.pickle", "rb") as f:
+                app.state.global_mem = pickle.load(f)
+
+        except Exception as e:
+            pass
+
+    yield  # Application runs here
+
+    # Save state to pickle file on shutdown
+    try:
+        with open("./app_state.pickle", "wb") as f:
+            pickle.dump(app.state.global_mem, f)
+    except Exception as e:
+        pass
+
+
+class Davia(FastAPI):
     """
-    Main application class that hold all registered subobjects
+    Main application class that holds all tasks and graphs
+
+    Read more in the [Davia docs](https://docs.davia.ai/introduction).
+
+    ## Example
+
+    ```python
+    from davia import Davia
+
+    app = Davia(title="My App", description="My App Description")
+    ```
     """
 
-    def __init__(self, name: str = "davia"):
-        self.name = name
+    def __init__(self, state=None, **kwargs):
+        super().__init__(lifespan=custom_lifespan, **kwargs)
         self.tasks = {}
         self.graphs = {}
+        self.include_router(router)
+
+        # Initialize state
+        self._custom_state = state or {}
 
     @property
     def task(self):
@@ -69,31 +109,3 @@ class Davia:
             return func
 
         return decorator
-
-    def list_tasks(self):
-        """
-        List all registered tasks
-        """
-        return list(self.tasks.keys())
-
-    def list_graphs(self):
-        """
-        List all registered graphs
-        """
-        return list(self.graphs.keys())
-
-    def get_task_info(self, task_name: str) -> Dict[str, Any]:
-        """
-        Get detailed information about a task including its parameters and docstring.
-        """
-        if task_name not in self.tasks:
-            raise KeyError(f"Task '{task_name}' not found")
-        return self.tasks[task_name]
-
-    def get_graph_info(self, graph_name: str) -> Dict[str, Any]:
-        """
-        Get detailed information about a graph including its parameters and docstring.
-        """
-        if graph_name not in self.graphs:
-            raise KeyError(f"Graph '{graph_name}' not found")
-        return self.graphs[graph_name]

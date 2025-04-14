@@ -1,98 +1,111 @@
-import typer
+import json
+from dotenv import load_dotenv
+from langgraph_api.cli import patch_environment
+import uvicorn
 from rich import print
-from typing_extensions import Annotated
+import typer
+import threading
 from pathlib import Path
-import importlib.util
-import sys
-from davia.langgraph.launcher import run_server
-from davia.app.application import Davia
+import pickle
+import os
 
-app = typer.Typer(no_args_is_help=True, rich_markup_mode="markdown")
-
-
-@app.callback()
-def callback():
-    """
-    :sparkles: Davia
-    - Customize your UI with generative components
-    - Experience the perfect fusion of human creativity and artificial intelligence!
-    - Get started here: [quickstart](https://docs.davia.ai/quickstart)
-    """
+from davia.application import Davia
+from davia.utils import get_davia_instance_path
 
 
-def _load_app_from_file(file_path: Path) -> Davia:
-    """Load a Davia app from a Python file."""
-    # Convert to absolute path
-    file_path = file_path.absolute()
-
-    # Create a module spec
-    spec = importlib.util.spec_from_file_location("davia_app", file_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load module from {file_path}")
-
-    # Add the parent directory to sys.path to allow relative imports
-    sys.path.insert(0, str(file_path.parent))
-
-    # Load the module
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    # Find the Davia app instance
-    for name, obj in module.__dict__.items():
-        if isinstance(obj, Davia):
-            return obj
-
-    raise ValueError(f"No Davia app instance found in {file_path}")
-
-
-@app.command()
-def run(
-    file: Annotated[
-        Path,
-        typer.Argument(
-            help="Path to a Python file containing a Davia app. The file should contain a Davia app instance."
-        ),
-    ],
-    host: Annotated[
-        str,
-        typer.Option(
-            help="The host to serve on. For local development use [blue]127.0.0.1[/blue]. For public access use [blue]0.0.0.0[/blue]."
-        ),
-    ] = "127.0.0.1",
-    port: Annotated[
-        int,
-        typer.Option(help="The port to serve on."),
-    ] = 2025,
-    reload: Annotated[
-        bool,
-        typer.Option(
-            help="Enable auto-reload of the server when files change. Use only during development."
-        ),
-    ] = True,
-    n_jobs_per_worker: Annotated[
-        int,
-        typer.Option(help="Number of jobs per worker."),
-    ] = 1,
-    browser: Annotated[
-        bool,
-        typer.Option(help="Open browser automatically when server starts."),
-    ] = True,
+def run_server(
+    app: Davia,
+    host: str = "127.0.0.1",
+    port: int = 2025,
+    browser: bool = True,
+    reload: bool = True,
+    n_jobs_per_worker: int = 1,
+    _davia_instance_path: str = None,
 ):
-    """
-    Run a Davia app from a Python file.
+    local_url = f"http://{host}:{port}"
+    preview_url = "https://dev.davia.ai/dashboard"
 
-    The file should contain a Davia app instance that will be used to run the server.
-    """
+    def _open_browser():
+        import time
+        import urllib.request
+
+        while True:
+            try:
+                with urllib.request.urlopen(f"{local_url}/info") as response:
+                    if response.status == 200:
+                        typer.launch(preview_url)
+                        return
+            except urllib.error.URLError:
+                pass
+            time.sleep(0.1)
+
+    if browser:
+        threading.Thread(target=_open_browser, daemon=True).start()
+
+    print(f"""
+        Welcome to
+▗▄▄▄   ▗▄▖ ▗▖  ▗▖▗▄▄▄▖ ▗▄▖ 
+▐▌  █ ▐▌ ▐▌▐▌  ▐▌  █  ▐▌ ▐▌
+▐▌  █ ▐▛▀▜▌▐▌  ▐▌  █  ▐▛▀▜▌
+▐▙▄▄▀ ▐▌ ▐▌ ▝▚▞▘ ▗▄█▄▖▐▌ ▐▌
+
+- 🎨 UI: {preview_url}
+""")
+
+    graphs = {
+        name: f"{Path(graph_data['source_file']).resolve().as_posix()}:{name}"
+        for name, graph_data in app.graphs.items()
+    }
+    tasks = app.tasks
+    davia_instance_path = _davia_instance_path or get_davia_instance_path(app)
+
+    if app._custom_state:
+        with open("./app_state.pickle", "wb") as f:
+            pickle.dump(app._custom_state, f)
+
     try:
-        app = _load_app_from_file(file)
-        run_server(
-            app=app,
-            host=host,
-            port=port,
-            reload=reload,
-            n_jobs_per_worker=n_jobs_per_worker,
-            browser=browser,
-        )
-    except Exception as e:
-        print(f"[red]Error: {str(e)}[/red]")
-        raise typer.Exit(1)
+        with patch_environment(
+            MIGRATIONS_PATH="__inmem",
+            DATABASE_URI=":memory:",
+            REDIS_URI="fake",
+            N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
+            LANGSERVE_GRAPHS=json.dumps(graphs) if graphs else None,
+            TASKS=json.dumps(tasks) if tasks else None,
+            LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
+            LANGGRAPH_HTTP=json.dumps({"app": davia_instance_path})
+            if davia_instance_path
+            else None,
+            # See https://developer.chrome.com/blog/private-network-access-update-2024-03
+            ALLOW_PRIVATE_NETWORK="true",
+        ):
+            load_dotenv()
+
+            uvicorn.run(
+                "langgraph_api.server:app",
+                host=host,
+                port=port,
+                reload=reload,
+                log_level="warning",
+                access_log=False,
+                log_config={
+                    "version": 1,
+                    "incremental": False,
+                    "disable_existing_loggers": False,
+                    "formatters": {
+                        "simple": {
+                            "class": "langgraph_api.logging.Formatter",
+                        }
+                    },
+                    "handlers": {
+                        "console": {
+                            "class": "logging.StreamHandler",
+                            "formatter": "simple",
+                            "stream": "ext://sys.stdout",
+                        }
+                    },
+                    "root": {"handlers": ["console"]},
+                },
+            )
+    finally:
+        if os.path.exists("./app_state.pickle"):
+            os.remove("./app_state.pickle")
