@@ -150,12 +150,6 @@ async def task(request: Request, task_name: str):
         raise HTTPException(status_code=500, detail=f"Error executing task: {str(e)}")
 
 
-@router.get("/state")
-async def get_state(request: Request) -> dict:
-    """Get the current state of the app."""
-    return request.app.state.global_mem
-
-
 @router.get("/graph-schemas")
 async def graph_schemas(request: Request) -> list[Schema]:
     """Get all registered graph schemas with their complete information."""
