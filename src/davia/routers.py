@@ -18,6 +18,7 @@ from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 from dataclasses import fields, is_dataclass
 import httpx
+from davia.state import State
 
 router = APIRouter()
 
@@ -88,19 +89,71 @@ async def task(request: Request, task_name: str):
         # Get function signature for validation
         signature = inspect.signature(func)
 
-        # Validate input parameters
+        # Get the app instance
+        app = request.app
+
+        # Prepare arguments
+        kwargs = {}
+
         for param_name, param in signature.parameters.items():
-            if param_name not in body and param.default == inspect.Parameter.empty:
-                raise HTTPException(
-                    status_code=400, detail=f"Missing required parameter: {param_name}"
-                )
+            # Handle State parameters
+
+            if param.annotation is State:
+                kwargs[param_name] = app.state.global_mem
+
+            elif get_origin(param.annotation) is Annotated:
+                base_type, *metadata = get_args(param.annotation)
+
+                for m in metadata:
+                    if type(m) is State:
+                        # Get state value from app's global memory
+                        if (
+                            hasattr(app, "state")
+                            and hasattr(app.state, "global_mem")
+                            and m.key in app.state.global_mem
+                        ):
+                            kwargs[param_name] = app.state.global_mem[m.key]
+                        else:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"State '{m.key}' not found in app state",
+                            )
+                    else:
+                        # Regular parameter
+                        if param_name in body:
+                            kwargs[param_name] = body[param_name]
+                        elif param.default != inspect.Parameter.empty:
+                            kwargs[param_name] = param.default
+                        else:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Missing required parameter: {param_name}",
+                            )
+
+            else:
+                # Regular parameter
+                if param_name in body:
+                    kwargs[param_name] = body[param_name]
+                elif param.default != inspect.Parameter.empty:
+                    kwargs[param_name] = param.default
+                else:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Missing required parameter: {param_name}",
+                    )
 
         # Execute the function
-        result = func(**body)
+        result = func(**kwargs)
 
         return {"result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error executing task: {str(e)}")
+
+
+@router.get("/state")
+async def get_state(request: Request) -> dict:
+    """Get the current state of the app."""
+    return request.app.state.global_mem
 
 
 @router.get("/graph-schemas")

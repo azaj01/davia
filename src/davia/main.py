@@ -6,6 +6,8 @@ from rich import print
 import typer
 import threading
 from pathlib import Path
+import pickle
+import os
 
 from davia.application import Davia
 from davia.utils import get_davia_instance_path
@@ -57,44 +59,53 @@ def run_server(
     tasks = app.tasks
     davia_instance_path = _davia_instance_path or get_davia_instance_path(app)
 
-    with patch_environment(
-        MIGRATIONS_PATH="__inmem",
-        DATABASE_URI=":memory:",
-        REDIS_URI="fake",
-        N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
-        LANGSERVE_GRAPHS=json.dumps(graphs) if graphs else None,
-        TASKS=json.dumps(tasks) if tasks else None,
-        LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
-        LANGGRAPH_HTTP=json.dumps({"app": davia_instance_path})
-        if davia_instance_path
-        else None,
-        # See https://developer.chrome.com/blog/private-network-access-update-2024-03
-        ALLOW_PRIVATE_NETWORK="true",
-    ):
-        load_dotenv()
-        uvicorn.run(
-            "langgraph_api.server:app",
-            host=host,
-            port=port,
-            reload=reload,
-            log_level="warning",
-            access_log=False,
-            log_config={
-                "version": 1,
-                "incremental": False,
-                "disable_existing_loggers": False,
-                "formatters": {
-                    "simple": {
-                        "class": "langgraph_api.logging.Formatter",
-                    }
+    if app._custom_state:
+        with open("./app_state.pickle", "wb") as f:
+            pickle.dump(app._custom_state, f)
+
+    try:
+        with patch_environment(
+            MIGRATIONS_PATH="__inmem",
+            DATABASE_URI=":memory:",
+            REDIS_URI="fake",
+            N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
+            LANGSERVE_GRAPHS=json.dumps(graphs) if graphs else None,
+            TASKS=json.dumps(tasks) if tasks else None,
+            LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
+            LANGGRAPH_HTTP=json.dumps({"app": davia_instance_path})
+            if davia_instance_path
+            else None,
+            # See https://developer.chrome.com/blog/private-network-access-update-2024-03
+            ALLOW_PRIVATE_NETWORK="true",
+        ):
+            load_dotenv()
+
+            uvicorn.run(
+                "langgraph_api.server:app",
+                host=host,
+                port=port,
+                reload=reload,
+                log_level="warning",
+                access_log=False,
+                log_config={
+                    "version": 1,
+                    "incremental": False,
+                    "disable_existing_loggers": False,
+                    "formatters": {
+                        "simple": {
+                            "class": "langgraph_api.logging.Formatter",
+                        }
+                    },
+                    "handlers": {
+                        "console": {
+                            "class": "logging.StreamHandler",
+                            "formatter": "simple",
+                            "stream": "ext://sys.stdout",
+                        }
+                    },
+                    "root": {"handlers": ["console"]},
                 },
-                "handlers": {
-                    "console": {
-                        "class": "logging.StreamHandler",
-                        "formatter": "simple",
-                        "stream": "ext://sys.stdout",
-                    }
-                },
-                "root": {"handlers": ["console"]},
-            },
-        )
+            )
+    finally:
+        if os.path.exists("./app_state.pickle"):
+            os.remove("./app_state.pickle")
