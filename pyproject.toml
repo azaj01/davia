@@ -1,6 +1,6 @@
 [project]
 name = "davia"
-version = "0.1.4"
+version = "0.1.5"
 description = "A CLI tool for the Davia no-code platform to test and deploy AI-native interfaces"
 readme = "README.md"
 authors = [{ name = "Davia", email = "contact@davia.ai" }]
