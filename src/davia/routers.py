@@ -358,6 +358,16 @@ def inspect_function_from_path(path: str) -> dict:
         # Get input parameters
         parameters = {}
         for name, param in signature.parameters.items():
+            # Skip State parameters
+            if param.annotation is State:
+                continue
+
+            # Skip Annotated State parameters
+            if get_origin(param.annotation) is Annotated:
+                base_type, *metadata = get_args(param.annotation)
+                if any(type(m) is State for m in metadata):
+                    continue
+
             if param.annotation != inspect.Parameter.empty:
                 parameters[name] = convert_type_to_str(param.annotation)
             else:
