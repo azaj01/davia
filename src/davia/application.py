@@ -17,7 +17,7 @@ async def custom_lifespan(app: FastAPI):
             with open("./app_state.pickle", "rb") as f:
                 app.state.global_mem = pickle.load(f)
 
-        except Exception as e:
+        except Exception:
             pass
 
     yield  # Application runs here
@@ -26,7 +26,7 @@ async def custom_lifespan(app: FastAPI):
     try:
         with open("./app_state.pickle", "wb") as f:
             pickle.dump(app.state.global_mem, f)
-    except Exception as e:
+    except Exception:
         pass
 
 
