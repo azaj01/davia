@@ -129,7 +129,6 @@ async def task(request: Request, task_name: str):
                                 status_code=400,
                                 detail=f"Missing required parameter: {param_name}",
                             )
-
             else:
                 # Regular parameter
                 if param_name in body:
@@ -354,6 +353,7 @@ def inspect_function_from_path(path: str) -> dict:
 
         # Get function signature
         signature = inspect.signature(func)
+        # TODO: handle default values
 
         # Get input parameters
         parameters = {}
@@ -367,13 +367,10 @@ def inspect_function_from_path(path: str) -> dict:
                 base_type, *metadata = get_args(param.annotation)
                 if any(type(m) is State for m in metadata):
                     continue
-
-            if param.annotation != inspect.Parameter.empty:
-                parameters[name] = convert_type_to_str(param.annotation)
-            else:
-                parameters[name] = {"type": "Any"}
+            parameters[name] = convert_type_to_str(param.annotation)
 
         # Get return type
+
         return_type = {"type": "Any"}
         if signature.return_annotation != inspect.Signature.empty:
             return_type = convert_type_to_str(signature.return_annotation)
