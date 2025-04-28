@@ -143,8 +143,8 @@ async def task(request: Request, task_name: str):
 
         # Execute the function
         result = func(**kwargs)
+        return result
 
-        return {"result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error executing task: {str(e)}")
 
