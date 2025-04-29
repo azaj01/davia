@@ -141,8 +141,10 @@ async def task(request: Request, task_name: str):
                         detail=f"Missing required parameter: {param_name}",
                     )
 
-        # Execute the function
+        # Execute the function and handle both sync and async cases
         result = func(**kwargs)
+        if inspect.iscoroutine(result):
+            result = await result
         return result
 
     except Exception as e:
