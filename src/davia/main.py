@@ -71,6 +71,7 @@ def run_server(
             N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
             LANGSERVE_GRAPHS=json.dumps(graphs) if graphs else None,
             TASKS=json.dumps(tasks) if tasks else None,
+            DAVIA_GRAPHS=json.dumps(app.graphs) if app.graphs else None,
             LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
             LANGGRAPH_HTTP=json.dumps({"app": davia_instance_path})
             if davia_instance_path
