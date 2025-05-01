@@ -151,6 +151,46 @@ async def task(request: Request, task_name: str):
         raise HTTPException(status_code=500, detail=f"Error executing task: {str(e)}")
 
 
+@router.get("/graph-config/{graph_name}")
+async def graph_config(request: Request, graph_name: str) -> Dict[str, Any]:
+    """Get the configuration for a graph."""
+    # Get tasks from environment
+    graphs = json.loads(os.getenv("DAVIA_GRAPHS"))
+
+    # Check if task exists
+    if graph_name not in graphs:
+        raise HTTPException(status_code=404, detail=f"Graph '{graph_name}' not found")
+
+    # Get task info
+    graph_info = graphs[graph_name]
+    source_file = graph_info.get("source_file")
+
+    # Get the function
+    func = get_function_from_path(f"{source_file}:{graph_name}")
+
+    # Get the function signature
+    signature = inspect.signature(func)
+
+    # Check if config parameter exists
+    if "config" in signature.parameters:
+        param = signature.parameters["config"]
+
+        # Check if it has a default value
+        if param.default != inspect.Parameter.empty:
+            return param.default
+        else:
+            # Config parameter exists but no default value
+            import warnings
+
+            warnings.warn(
+                f"Graph '{graph_name}' has a config parameter but no default value provided"
+            )
+            return {}
+    else:
+        # No config parameter found
+        return {}
+
+
 @router.get("/graph-schemas")
 async def graph_schemas(request: Request) -> list[Schema]:
     """Get all registered graph schemas with their complete information."""
