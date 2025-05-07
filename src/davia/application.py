@@ -8,6 +8,7 @@ from pathlib import Path
 
 from davia.routers import router
 from davia.main import run_server
+from davia.scalar import get_scalar_api_reference
 
 
 @asynccontextmanager
@@ -50,13 +51,23 @@ class Davia(FastAPI):
     """
 
     def __init__(self, state=None, **kwargs):
-        super().__init__(lifespan=custom_lifespan, **kwargs)
+        super().__init__(
+            lifespan=custom_lifespan, redoc_url=None, docs_url=None, **kwargs
+        )
         self._tasks = []
         self._graphs = {}
         self.include_router(router)
 
         # Initialize state
         self._custom_state = state or {}
+
+        # Add Scalar API reference route
+        @self.get("/docs", include_in_schema=False)
+        async def scalar_html():
+            return get_scalar_api_reference(
+                openapi_url=self.openapi_url,
+                title=self.title,
+            )
 
     def task(self, func: Callable) -> Callable:
         self._tasks.append(func.__name__)
