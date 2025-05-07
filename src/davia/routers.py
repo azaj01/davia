@@ -33,6 +33,14 @@ class Schema(BaseModel):
     kind: Literal["task", "graph"]
 
 
+@router.get("/davia-info", include_in_schema=False)
+async def davia_info() -> dict:
+    """Get information about the Davia app."""
+    return {
+        "name": "davia",
+    }
+
+
 @router.get("/task-schemas")
 async def task_schemas() -> list[Schema]:
     """Get all registered task schemas with their complete information."""

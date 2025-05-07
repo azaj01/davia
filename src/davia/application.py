@@ -1,9 +1,13 @@
 import os
 import inspect
 from fastapi import FastAPI
-from davia.routers import router
 import pickle
 from contextlib import asynccontextmanager
+from typing import Callable
+from pathlib import Path
+
+from davia.routers import router
+from davia.main import run_server
 
 
 @asynccontextmanager
@@ -47,38 +51,24 @@ class Davia(FastAPI):
 
     def __init__(self, state=None, **kwargs):
         super().__init__(lifespan=custom_lifespan, **kwargs)
-        self.tasks = {}
-        self.graphs = {}
+        self._tasks = []
+        self._graphs = {}
         self.include_router(router)
 
         # Initialize state
         self._custom_state = state or {}
 
-    @property
-    def task(self):
-        """
-        Decorator to register a task.
-        Usage:
-            @app.task
-            def my_task():
-                pass
-        """
+    def task(self, func: Callable) -> Callable:
+        self._tasks.append(func.__name__)
+        # Add the route, letting FastAPI handle all the type inference
+        self.add_api_route(
+            f"/{func.__name__}",
+            func,
+            methods=["POST"],
+            tags=["Davia tasks"],
+        )
 
-        def decorator(func):
-            # Get source file information
-            source_file = inspect.getsourcefile(func)
-            if source_file:
-                source_file = os.path.relpath(source_file)
-
-            # Store graph with metadata
-            self.tasks[func.__name__] = {
-                "source_file": source_file,  # Store the source file
-            }
-
-            # Return the original function
-            return func
-
-        return decorator
+        return func
 
     @property
     def graph(self):
@@ -101,7 +91,7 @@ class Davia(FastAPI):
                 source_file = os.path.relpath(source_file)
 
             # Store graph with metadata
-            self.graphs[func.__name__] = {
+            self._graphs[func.__name__] = {
                 "source_file": source_file,  # Store the source file
             }
 
@@ -109,3 +99,33 @@ class Davia(FastAPI):
             return func
 
         return decorator
+
+    def run(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 2025,
+        reload: bool = True,
+        browser: bool = True,
+        n_jobs_per_worker: int = 1,
+    ):
+        """
+        Run the Davia app.
+
+        Args:
+            host: Network interface to bind the development server to. Default 127.0.0.1 is recommended for security. Only use 0.0.0.0 in trusted networks.
+            port: Port number to bind the development server to.
+            reload: Enable auto-reload of the server when files change. Use only during development.
+            browser: Open browser automatically when server starts.
+            n_jobs_per_worker: Number of jobs per worker.
+
+        Example:
+            ```python
+            from davia import Davia
+
+            app = Davia()
+            app.run()
+            ```
+        """
+        frame_info = inspect.stack()[1]
+        filename = Path(frame_info.filename)
+        run_server(filename, host, port, reload, browser, n_jobs_per_worker)
