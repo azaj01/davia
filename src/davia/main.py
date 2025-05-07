@@ -40,7 +40,7 @@ def run_server(
 
         while True:
             try:
-                with urllib.request.urlopen(f"{local_url}/davia-info") as response:
+                with urllib.request.urlopen(f"{local_url}/davia/info") as response:
                     if response.status == 200:
                         typer.launch(preview_url)
                         return

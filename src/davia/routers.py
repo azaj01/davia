@@ -14,13 +14,15 @@ from typing import (
 from pathlib import Path
 import importlib.util
 import inspect
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from dataclasses import fields, is_dataclass
 import httpx
+
+from davia._version import __version__
 from davia.state import State
 
-router = APIRouter()
+router = APIRouter(prefix="/davia")
 
 
 class Schema(BaseModel):
@@ -33,12 +35,28 @@ class Schema(BaseModel):
     kind: Literal["task", "graph"]
 
 
-@router.get("/davia-info", include_in_schema=False)
+@router.get("/info", include_in_schema=False)
 async def davia_info() -> dict:
     """Get information about the Davia app."""
     return {
         "name": "davia",
+        "version": __version__,
     }
+
+
+@router.websocket("/debug-ws")
+async def debug_ws(websocket: WebSocket):
+    """Debug websocket."""
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"Message text was: {data}")
+    except (WebSocketDisconnect, RuntimeError):
+        try:
+            await websocket.close()
+        except Exception:
+            pass
 
 
 @router.get("/graph-config/{graph_name}", tags=["Davia graphs"])

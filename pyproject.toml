@@ -1,6 +1,6 @@
 [project]
 name = "davia"
-version = "0.1.11"
+dynamic = ["version"]
 description = "The easiest way to build AI apps from your Python code"
 readme = "README.md"
 authors = [{ name = "Davia", email = "contact@davia.ai" }]
@@ -58,3 +58,6 @@ langchain = [
 
 [tool.uv]
 default-groups = ["dev", "langchain"]
+
+[tool.hatch.version]
+path = "src/davia/_version.py"
