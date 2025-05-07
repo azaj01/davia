@@ -1,6 +1,7 @@
 import os
 import inspect
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import pickle
 from contextlib import asynccontextmanager
 from typing import Callable
@@ -54,6 +55,16 @@ class Davia(FastAPI):
         super().__init__(
             lifespan=custom_lifespan, redoc_url=None, docs_url=None, **kwargs
         )
+
+        # Add CORS middleware
+        self.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
         self._tasks = []
         self._graphs = {}
         self.include_router(router)
