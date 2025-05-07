@@ -1,16 +1,16 @@
-import json
 from dotenv import load_dotenv
+import os
+import json
 import uvicorn
-from fastapi_cli.cli import dev
 from rich import print
 from rich.text import Text
 import typer
 import threading
 from pathlib import Path
 import pickle
-import os
-from fastapi_cli.discover import get_import_data
 import importlib
+from fastapi_cli.discover import get_import_data
+
 
 _welcome_message = """
 Welcome to
@@ -21,126 +21,6 @@ Welcome to
 
 - 🎨 UI: {preview_url}
 """
-
-# def run(
-#     app: Davia,
-#     host: str = "127.0.0.1",
-#     port: int = 2025,
-#     browser: bool = True,
-#     reload: bool = True,
-#     n_jobs_per_worker: int = 1,
-#     _davia_instance_path: str = None,
-# ):
-#     local_url = f"http://{host}:{port}"
-#     preview_url = "https://dev.davia.ai/dashboard"
-
-#     def _open_browser():
-#         import time
-#         import urllib.request
-
-#         while True:
-#             try:
-#                 with urllib.request.urlopen(f"{local_url}/davia-info") as response:
-#                     if response.status == 200:
-#                         typer.launch(preview_url)
-#                         return
-#             except urllib.error.URLError:
-#                 pass
-#             time.sleep(0.1)
-
-#     if browser:
-#         threading.Thread(target=_open_browser, daemon=True).start()
-
-#     print(f"""
-#         Welcome to
-# ▗▄▄▄   ▗▄▖ ▗▖  ▗▖▗▄▄▄▖ ▗▄▖
-# ▐▌  █ ▐▌ ▐▌▐▌  ▐▌  █  ▐▌ ▐▌
-# ▐▌  █ ▐▛▀▜▌▐▌  ▐▌  █  ▐▛▀▜▌
-# ▐▙▄▄▀ ▐▌ ▐▌ ▝▚▞▘ ▗▄█▄▖▐▌ ▐▌
-
-# - 🎨 UI: {preview_url}
-# """)
-#     davia_instance_path = _davia_instance_path or get_davia_instance_path(app)
-
-#     if app._custom_state:
-#         with open("./app_state.pickle", "wb") as f:
-#             pickle.dump(app._custom_state, f)
-
-#     try:
-#         if not app._graphs:
-#             load_dotenv()
-#             import_data = get_import_data(path=Path(davia_instance_path.split(":")[0]))
-#             print(import_data.app_name)
-#             print(import_data.import_string)
-#             uvicorn.run(
-#                 import_data.import_string,
-#                 host=host,
-#                 port=port,
-#                 reload=reload,
-#             )
-
-#         else:
-#             try:
-#                 from langgraph_api.cli import patch_environment
-#             except ImportError:
-#                 print(
-#                     "[red]Error: Davia langgraph dependencies are not installed.[/red]"
-#                 )
-#                 install_text = Text(
-#                     'Please install them using: pip install -U "davia[langgraph]"'
-#                 )
-#                 install_text.stylize("yellow")
-#                 print(install_text)
-#                 raise typer.Exit(code=1) from None
-#             graphs = {
-#                 name: f"{Path(graph_data['source_file']).resolve().as_posix()}:{name}"
-#                 for name, graph_data in app._graphs.items()
-#             }
-#             with patch_environment(
-#                 MIGRATIONS_PATH="__inmem",
-#                 DATABASE_URI=":memory:",
-#                 REDIS_URI="fake",
-#                 N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
-#                 LANGSERVE_GRAPHS=json.dumps(graphs) if graphs else None,
-#                 DAVIA_GRAPHS=json.dumps(app._graphs) if app._graphs else None,
-#                 LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
-#                 LANGGRAPH_HTTP=json.dumps({"app": davia_instance_path})
-#                 if davia_instance_path
-#                 else None,
-#                 # See https://developer.chrome.com/blog/private-network-access-update-2024-03
-#                 ALLOW_PRIVATE_NETWORK="true",
-#             ):
-#                 load_dotenv()
-
-#                 uvicorn.run(
-#                     "langgraph_api.server:app",
-#                     host=host,
-#                     port=port,
-#                     reload=reload,
-#                     log_level="warning",
-#                     access_log=False,
-#                     log_config={
-#                         "version": 1,
-#                         "incremental": False,
-#                         "disable_existing_loggers": False,
-#                         "formatters": {
-#                             "simple": {
-#                                 "class": "langgraph_api.logging.Formatter",
-#                             }
-#                         },
-#                         "handlers": {
-#                             "console": {
-#                                 "class": "logging.StreamHandler",
-#                                 "formatter": "simple",
-#                                 "stream": "ext://sys.stdout",
-#                             }
-#                         },
-#                         "root": {"handlers": ["console"]},
-#                     },
-#                 )
-#     finally:
-#         if os.path.exists("./app_state.pickle"):
-#             os.remove("./app_state.pickle")
 
 
 def run_server(
@@ -179,13 +59,82 @@ def run_server(
 
     mod = importlib.import_module(import_data.module_data.module_import_str)
     app = getattr(mod, import_data.app_name)
-    print(app._tasks)
-    print(app._graphs)
 
-    print(_welcome_message.format(preview_url=preview_url))
-    # uvicorn.run(
-    #     import_data.import_string,
-    #     host=host,
-    #     port=port,
-    #     reload=reload,
-    # )
+    if app._custom_state:
+        with open("./app_state.pickle", "wb") as f:
+            pickle.dump(app._custom_state, f)
+
+    try:
+        if not app._graphs:
+            # Tasks only
+            print(_welcome_message.format(preview_url=preview_url))
+            load_dotenv()
+            uvicorn.run(
+                import_data.import_string,
+                host=host,
+                port=port,
+                reload=reload,
+            )
+        else:
+            try:
+                from langgraph_api.cli import patch_environment
+            except ImportError:
+                print(
+                    "[red]Error: Davia langgraph dependencies are not installed.[/red]"
+                )
+                install_text = Text(
+                    'Please install them using: pip install -U "davia[langgraph]"'
+                )
+                install_text.stylize("yellow")
+                print(install_text)
+                raise typer.Exit(code=1) from None
+            graphs = {
+                name: f"{Path(graph_data['source_file']).resolve().as_posix()}:{name}"
+                for name, graph_data in app._graphs.items()
+            }
+            with patch_environment(
+                MIGRATIONS_PATH="__inmem",
+                DATABASE_URI=":memory:",
+                REDIS_URI="fake",
+                N_JOBS_PER_WORKER=str(n_jobs_per_worker if n_jobs_per_worker else 1),
+                LANGSERVE_GRAPHS=json.dumps(graphs) if graphs else None,
+                DAVIA_GRAPHS=json.dumps(app._graphs) if app._graphs else None,
+                LANGSMITH_LANGGRAPH_API_VARIANT="local_dev",
+                LANGGRAPH_HTTP=json.dumps(
+                    {"app": f"{app_path}:{import_data.app_name}"}
+                ),
+                # See https://developer.chrome.com/blog/private-network-access-update-2024-03
+                ALLOW_PRIVATE_NETWORK="true",
+            ):
+                print(_welcome_message.format(preview_url=preview_url))
+                load_dotenv()
+
+                uvicorn.run(
+                    "langgraph_api.server:app",
+                    host=host,
+                    port=port,
+                    reload=reload,
+                    log_level="warning",
+                    access_log=False,
+                    log_config={
+                        "version": 1,
+                        "incremental": False,
+                        "disable_existing_loggers": False,
+                        "formatters": {
+                            "simple": {
+                                "class": "langgraph_api.logging.Formatter",
+                            }
+                        },
+                        "handlers": {
+                            "console": {
+                                "class": "logging.StreamHandler",
+                                "formatter": "simple",
+                                "stream": "ext://sys.stdout",
+                            }
+                        },
+                        "root": {"handlers": ["console"]},
+                    },
+                )
+    finally:
+        if os.path.exists("./app_state.pickle"):
+            os.remove("./app_state.pickle")

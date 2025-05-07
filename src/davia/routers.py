@@ -41,125 +41,7 @@ async def davia_info() -> dict:
     }
 
 
-@router.get("/task-schemas")
-async def task_schemas() -> list[Schema]:
-    """Get all registered task schemas with their complete information."""
-    tasks = json.loads(os.environ.get("TASKS", "{}"))
-
-    task_schemas = []
-    for name, task_info in tasks.items():
-        # Get the source file from the task info
-        source_file = task_info.get("source_file")
-
-        # Get function info from the source file
-        function_info = inspect_function_from_path(f"{source_file}:{name}")
-
-        # Create user state snapshot with type information
-        user_state_snapshot = {
-            "input": function_info["parameters"],
-            "output": function_info["return_type"],
-        }
-
-        task_schemas.append(
-            Schema(
-                name=name,
-                docstring=function_info["docstring"],
-                source_file=function_info["source_file"],
-                user_state_snapshot=user_state_snapshot,
-                kind="task",
-            )
-        )
-    return task_schemas
-
-
-@router.post("/task/{task_name}")
-async def task(request: Request, task_name: str):
-    """Execute a task with the given name and parameters."""
-
-    # Get tasks from environment
-    tasks = json.loads(os.getenv("TASKS"))
-
-    # Check if task exists
-    if task_name not in tasks:
-        raise HTTPException(status_code=404, detail=f"Task '{task_name}' not found")
-
-    # Get task info
-    task_info = tasks[task_name]
-    source_file = task_info.get("source_file")
-
-    # Get the function
-    func = get_function_from_path(f"{source_file}:{task_name}")
-
-    # Get the request body
-    body = await request.json()
-
-    try:
-        # Get function signature for validation
-        signature = inspect.signature(func)
-
-        # Get the app instance
-        app = request.app
-
-        # Prepare arguments
-        kwargs = {}
-
-        for param_name, param in signature.parameters.items():
-            # Handle State parameters
-
-            if param.annotation is State:
-                kwargs[param_name] = app.state.global_mem
-
-            elif get_origin(param.annotation) is Annotated:
-                base_type, *metadata = get_args(param.annotation)
-
-                for m in metadata:
-                    if type(m) is State:
-                        # Get state value from app's global memory
-                        if (
-                            hasattr(app, "state")
-                            and hasattr(app.state, "global_mem")
-                            and m.key in app.state.global_mem
-                        ):
-                            kwargs[param_name] = app.state.global_mem[m.key]
-                        else:
-                            raise HTTPException(
-                                status_code=400,
-                                detail=f"State '{m.key}' not found in app state",
-                            )
-                    else:
-                        # Regular parameter
-                        if param_name in body:
-                            kwargs[param_name] = body[param_name]
-                        elif param.default != inspect.Parameter.empty:
-                            kwargs[param_name] = param.default
-                        else:
-                            raise HTTPException(
-                                status_code=400,
-                                detail=f"Missing required parameter: {param_name}",
-                            )
-            else:
-                # Regular parameter
-                if param_name in body:
-                    kwargs[param_name] = body[param_name]
-                elif param.default != inspect.Parameter.empty:
-                    kwargs[param_name] = param.default
-                else:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Missing required parameter: {param_name}",
-                    )
-
-        # Execute the function and handle both sync and async cases
-        result = func(**kwargs)
-        if inspect.iscoroutine(result):
-            result = await result
-        return result
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error executing task: {str(e)}")
-
-
-@router.get("/graph-config/{graph_name}")
+@router.get("/graph-config/{graph_name}", tags=["Davia graphs"])
 async def graph_config(request: Request, graph_name: str) -> Dict[str, Any]:
     """Get the configuration for a graph."""
     # Get tasks from environment
@@ -199,7 +81,7 @@ async def graph_config(request: Request, graph_name: str) -> Dict[str, Any]:
         return {}
 
 
-@router.get("/graph-schemas")
+@router.get("/graph-schemas", tags=["Davia graphs"])
 async def graph_schemas(request: Request) -> list[Schema]:
     """Get all registered graph schemas with their complete information."""
     url = str(request.base_url).rstrip("/")
