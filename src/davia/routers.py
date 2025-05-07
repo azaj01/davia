@@ -3,7 +3,6 @@ import os
 from typing import (
     Any,
     Optional,
-    Literal,
     Union,
     Dict,
     Callable,
@@ -14,7 +13,7 @@ from typing import (
 from pathlib import Path
 import importlib.util
 import inspect
-from fastapi import APIRouter, Request, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 from dataclasses import fields, is_dataclass
 import httpx
@@ -29,10 +28,7 @@ class Schema(BaseModel):
     name: str
     docstring: Optional[str]
     source_file: Optional[str]
-    user_state_snapshot: Optional[
-        dict[str, Any]
-    ]  # New field to group parameters and return_type
-    kind: Literal["task", "graph"]
+    user_state_snapshot: Optional[dict[str, Any]]
 
 
 @router.get("/info", include_in_schema=False)
@@ -44,22 +40,9 @@ async def davia_info() -> dict:
     }
 
 
-@router.websocket("/debug-ws")
-async def debug_ws(websocket: WebSocket):
-    """Debug websocket."""
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Message text was: {data}")
-    except (WebSocketDisconnect, RuntimeError):
-        try:
-            await websocket.close()
-        except Exception:
-            pass
-
-
-@router.get("/graph-config/{graph_name}", tags=["Davia graphs"])
+@router.get(
+    "/graph-config/{graph_name}", include_in_schema=False, tags=["Davia graphs"]
+)
 async def graph_config(request: Request, graph_name: str) -> Dict[str, Any]:
     """Get the configuration for a graph."""
     # Get tasks from environment
@@ -99,12 +82,15 @@ async def graph_config(request: Request, graph_name: str) -> Dict[str, Any]:
         return {}
 
 
-@router.get("/graph-schemas", tags=["Davia graphs"])
+@router.get("/graph-schemas", include_in_schema=False, tags=["Davia graphs"])
 async def graph_schemas(request: Request) -> list[Schema]:
     """Get all registered graph schemas with their complete information."""
     url = str(request.base_url).rstrip("/")
 
     graphs = json.loads(os.environ.get("LANGSERVE_GRAPHS", "{}"))
+
+    if not graphs:
+        return []
 
     graphs_metadata = {}
     for name, path in graphs.items():
@@ -150,7 +136,6 @@ async def graph_schemas(request: Request) -> list[Schema]:
             docstring=graph_schemas[graph_id]["metadata"]["docstring"],
             source_file=graph_schemas[graph_id]["metadata"]["source_file"],
             user_state_snapshot=graph_schemas[graph_id]["assistant_schema"],
-            kind="graph",
         )
         for graph_id in graph_schemas.keys()
     ]
