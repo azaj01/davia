@@ -52,8 +52,13 @@ class Davia(FastAPI):
     """
 
     def __init__(self, state=None, **kwargs):
+        if "title" not in kwargs:
+            kwargs["title"] = "Davia App"
         super().__init__(
-            lifespan=custom_lifespan, redoc_url=None, docs_url=None, **kwargs
+            lifespan=custom_lifespan,
+            redoc_url=None,
+            docs_url=None,
+            **kwargs,
         )
 
         # Add CORS middleware
