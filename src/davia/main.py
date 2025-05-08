@@ -11,6 +11,10 @@ import pickle
 import importlib
 from fastapi_cli.discover import get_import_data
 
+from davia.utils import setup_logging
+
+# Configure logging
+setup_logging()
 
 _welcome_message = """
 Welcome to
