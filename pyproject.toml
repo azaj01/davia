@@ -1,23 +1,44 @@
 [project]
 name = "davia"
-version = "0.1.10"
-description = "A CLI tool for the Davia no-code platform to test and deploy AI-native interfaces"
+dynamic = ["version"]
+description = "The easiest way to build AI apps from your Python code"
 readme = "README.md"
 authors = [{ name = "Davia", email = "contact@davia.ai" }]
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: User Interfaces",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "fastapi[standard]>=0.115.12",
+    "typer>=0.15.3",
+]
+
+[project.optional-dependencies]
+langgraph = [
     "langchain-core>=0.3.40",
     "langgraph>=0.3.2",
     "langgraph-cli[inmem]>=0.1.74",
     "langgraph_api==0.0.38",
-    "typer>=0.15.1",
 ]
 
 [project.scripts]
 davia = "davia.cli:app"
+
+[project.urls]
+Homepage = "https://davia.ai"
+Documentation = "https://docs.davia.ai"
+Repository = "https://github.com/davialabs/davia.git"
+Issues = "https://github.com/davialabs/davia/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -37,3 +58,6 @@ langchain = [
 
 [tool.uv]
 default-groups = ["dev", "langchain"]
+
+[tool.hatch.version]
+path = "src/davia/_version.py"

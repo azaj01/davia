@@ -1,9 +1,8 @@
 import typer
 from rich import print
 from typing_extensions import Annotated
-
+from pathlib import Path
 from davia.main import run_server
-from davia.utils import load_davia_instance_from_path
 
 app = typer.Typer(no_args_is_help=True, rich_markup_mode="markdown")
 
@@ -23,7 +22,7 @@ def run(
     path: Annotated[
         str,
         typer.Argument(
-            help="Path to a Davia app. The file should contain a Davia app instance in the format 'path/to/file.py:app'."
+            help="Path to a Davia app. The file should contain a Davia app instance in the format 'path/to/file.py'."
         ),
     ],
     host: Annotated[
@@ -64,15 +63,13 @@ def run(
     The path should be in the format 'path/to/file.py:app'.
     """
     try:
-        davia_app = load_davia_instance_from_path(path)
         run_server(
-            app=davia_app,
+            app_path=Path(path),
             host=host,
             port=port,
             reload=reload,
-            n_jobs_per_worker=n_jobs_per_worker,
             browser=browser,
-            _davia_instance_path=path,
+            n_jobs_per_worker=n_jobs_per_worker,
         )
     except Exception as e:
         print(f"[red]Error: {str(e)}[/red]")
