@@ -1,5 +1,5 @@
 <div align="center">
-  <em>The easiest way to build AI apps from your Python code</em>
+  <h2>The easiest way to build AI apps from your Python code</h2>
 </div>
 <div align="center">
   <a href="https://pypi.python.org/pypi/davia"><img src="https://img.shields.io/pypi/v/davia.svg" alt="PyPI"></a>
@@ -16,6 +16,10 @@ Davia empowers Python developers to transform their applications, especially AI 
 - ✨ Real-time streaming and output updates, out-of-the-box.
 - ✨ Visually design your app without writing frontend code.
 - ✨ Works with any Python application, including LangGraph agents.
+
+## 🔧 FastAPI Integration
+
+Davia is built on top of FastAPI and works perfectly with it. You can think of Davia as a loveable companion to your FastAPI applications for a better developer experience. All FastAPI best practices you're familiar with remain applicable when using Davia. You can seamlessly add Davia-specific functionality to your existing FastAPI applications or extend your Davia apps with custom FastAPI endpoints.
 
 ## 🚀 Quickstart
 
@@ -79,9 +83,8 @@ For more detailed examples, please refer to our [Documentation](https://docs.dav
 
 ## 🛠️ Next Steps
 
-- **Explore the Docs**: Dive deeper into [Defining Tasks](https://docs.davia.ai/defining-tasks) and [Adding AI Agents](https://docs.davia.ai/adding-ai-agents).
+- **Explore the Docs**: Dive deeper into [Defining Tasks](https://docs.davia.ai/develop/defining-tasks) and [Adding AI Agents (LangGraph)](https://docs.davia.ai/develop/defining-graphs).
 - **Build your first App**: Follow the [Quickstart guide](https://docs.davia.ai/quickstart) to get your first Davia app running.
-- **Contribute**: Check out our [contribution guidelines](https://github.com/davialabs/davia/blob/main/CONTRIBUTING.md) (assuming one will be created) and help us improve Davia!
 - **Join the Community**: Stay tuned for community channels.
 
 ---
