@@ -7,7 +7,7 @@
   <a href="https://github.com/davialabs/davia/blob/main/LICENSE"><img src="https://img.shields.io/github/license/davialabs/davia.svg?v" alt="license"></a>
 </div>
 
-# Davia
+# [Davia](https://www.davia.ai/)
 
 Davia empowers Python developers to transform their applications, especially AI agents and data-driven internal tools, into interactive web applications with minimal effort. Say goodbye to frontend complexities and hello to rapid development and deployment. With Davia, you define your logic in Python, and Davia generates the user interface, handles real-time updates, and manages the backend.
 
