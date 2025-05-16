@@ -1,5 +1,5 @@
 <div align="center">
-  <h2>The easiest way to build AI apps from your Python code</h2>
+  <h2>The easiest way to build apps from your Python code</h2>
 </div>
 <div align="center">
   <a href="https://pypi.python.org/pypi/davia"><img src="https://img.shields.io/pypi/v/davia.svg" alt="PyPI"></a>
