@@ -19,7 +19,7 @@ Davia empowers Python developers to transform their applications, especially AI 
 
 ## 🔧 FastAPI Integration
 
-Davia is built on top of FastAPI and works perfectly with it. Idea to app in seconds, with your personal full stack engineer from your FastAPI. All FastAPI best practices you're familiar with remain applicable when using Davia. You can seamlessly add Davia-specific functionality to your existing FastAPI applications or extend your Davia apps with custom FastAPI endpoints.
+Think Lovable but wired straight into your Python backend, with a dev mode made for Python folks like us. Davia is built on top of FastAPI and works perfectly with it. All FastAPI best practices you're familiar with remain applicable when using Davia. You can seamlessly add Davia-specific functionality to your existing FastAPI applications or extend your Davia apps with custom FastAPI endpoints.
 
 ## 🚀 Quickstart
 
