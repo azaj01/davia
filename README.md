@@ -85,6 +85,7 @@ For more detailed examples, please refer to our [Documentation](https://docs.dav
 
 - **Explore the Docs**: Dive deeper into [Defining Tasks](https://docs.davia.ai/develop/defining-tasks) and [Adding AI Agents (LangGraph)](https://docs.davia.ai/develop/defining-graphs).
 - **Build your first App**: Follow the [Quickstart guide](https://docs.davia.ai/quickstart) to get your first Davia app running.
+- **Watch the Walkthrough**: Check out our [detailed walkthrough video](https://www.youtube.com/watch?v=X9U1eVg4APk&t=2s&ab) to see Davia in action.
 - **Join the Community**: Stay tuned for community channels.
 
 ---
