@@ -73,6 +73,20 @@ This command will start a local server, and Davia will typically open a browser 
 
 For more detailed examples, please refer to our [Documentation](https://docs.davia.ai/introduction) and the examples provided there.
 
+## 🎨 Beautiful UI Components
+
+Davia provides a modern and beautiful user interface out of the box. Our UI is built using [shadcn/ui](https://ui.shadcn.com/), a collection of reusable components that follow best practices and are built on top of Radix UI. The components are styled using [Tailwind CSS](https://tailwindcss.com/docs/colors), giving you access to a comprehensive color palette.
+
+![Davia UI Example](https://tfeifjfahexycwjammtk.supabase.co/storage/v1/object/public/public-material//Screenshot%202025-05-22%20at%201.10.36%20PM.png)
+
+The UI components are:
+
+- Fully accessible
+- Customizable with Tailwind's colours
+- Responsive and mobile-friendly
+- Dark mode ready
+- Built with performance in mind
+
 ## 🤝 Connect with Us
 
 - **LinkedIn**: [Davia on LinkedIn](https://www.linkedin.com/company/davia-labs)
