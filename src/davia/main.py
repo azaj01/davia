@@ -100,7 +100,7 @@ def run_server(
                     "[red]Error: Davia langgraph dependencies are not installed.[/red]"
                 )
                 install_text = Text(
-                    'Please install them using: pip install -U "davia[langgraph]"'
+                    'Please install them using: pip install -U langgraph "langgraph-api==0.0.38"'
                 )
                 install_text.stylize("yellow")
                 print(install_text)

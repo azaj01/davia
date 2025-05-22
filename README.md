@@ -35,10 +35,10 @@ For detailed information, visit our [Documentation](https://docs.davia.ai/introd
 pip install davia
 ```
 
-For LangGraph specific features, install the optional dependencies:
+For LangGraph specific features (requires Python 3.11 or higher), install the optional dependencies:
 
 ```bash
-pip install "davia[langgraph]"
+pip install davia langgraph "langgraph-api==0.0.38"
 ```
 
 ## Usage

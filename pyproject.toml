@@ -25,14 +25,6 @@ dependencies = [
     "typer>=0.15.3",
 ]
 
-[project.optional-dependencies]
-langgraph = [
-    "langchain-core>=0.3.40",
-    "langgraph>=0.3.2",
-    "langgraph-cli[inmem]>=0.1.74",
-    "langgraph_api==0.0.38",
-]
-
 [project.scripts]
 davia = "davia.cli:app"
 
