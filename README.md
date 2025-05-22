@@ -77,7 +77,7 @@ For more detailed examples, please refer to our [Documentation](https://docs.dav
 
 Davia provides a modern and beautiful user interface out of the box. Our UI is built using [shadcn/ui](https://ui.shadcn.com/), a collection of reusable components that follow best practices and are built on top of Radix UI. The components are styled using [Tailwind CSS](https://tailwindcss.com/docs/colors), giving you access to a comprehensive color palette.
 
-![Davia UI Example](https://tfeifjfahexycwjammtk.supabase.co/storage/v1/object/public/public-material//Screenshot%202025-05-22%20at%201.10.36%20PM.png)
+![Davia UI Example](https://tfeifjfahexycwjammtk.supabase.co/storage/v1/object/public/public-material//Screenshot%202025-05-22%20at%201.34.25%20PM.png)
 
 The UI components are:
 
