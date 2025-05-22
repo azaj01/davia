@@ -10,6 +10,7 @@ from pathlib import Path
 import pickle
 import importlib
 from fastapi_cli.discover import get_import_data
+import sys
 
 from davia.utils import setup_logging
 
@@ -80,6 +81,18 @@ def run_server(
                 reload=reload,
             )
         else:
+            # Check Python version for LangGraph compatibility
+            if sys.version_info < (3, 11):
+                print(
+                    "[red]Error: Davia with LangGraph requires Python 3.11 or higher.[/red]"
+                )
+                version_text = Text(
+                    f"You are currently using Python {sys.version_info.major}.{sys.version_info.minor}."
+                )
+                version_text.stylize("yellow")
+                print(version_text)
+                raise typer.Exit(code=1) from None
+
             try:
                 from langgraph_api.cli import patch_environment
             except ImportError:
