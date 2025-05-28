@@ -71,8 +71,6 @@ davia run my_app.py
 
 This command will start a local server, and Davia will typically open a browser window pointing to the application's UI, often hosted on a development dashboard like `https://davia.ai/dashboard`.
 
-<video src="https://tfeifjfahexycwjammtk.supabase.co/storage/v1/object/public/public-material//ezgif-51534abb4b3406.mp4" controls width="500" height="281.25"></video>
-
 ### Best Practices for Function Declarations
 
 When working with Davia, it's recommended to explicitly declare input and output types for your functions as well as providing a clear docstring. This practice not only improves code clarity but also ensures smooth integration with the TypeScript frontend that Davia generates. Here's an example:
