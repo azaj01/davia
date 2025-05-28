@@ -71,6 +71,34 @@ davia run my_app.py
 
 This command will start a local server, and Davia will typically open a browser window pointing to the application's UI, often hosted on a development dashboard like `https://davia.ai/dashboard`.
 
+### Best Practices for Function Declarations
+
+When working with Davia, it's recommended to explicitly declare input and output types for your functions. This practice not only improves code clarity but also ensures smooth integration with the TypeScript frontend that Davia generates. Here's an example:
+
+```python
+from pydantic import BaseModel
+
+class UserInput(BaseModel):
+    name: str
+    age: int
+    preferences: List[str]
+
+@app.task
+def calculate_user_score(input_data: UserInput) -> int:
+    # Example calculation based on user data
+    base_score = len(input_data.name) * 10
+    age_bonus = input_data.age * 2
+    preferences_bonus = len(input_data.preferences) * 5
+    return base_score + age_bonus + preferences_bonus
+```
+
+Using type hints and Pydantic models helps Davia:
+
+- Generate accurate TypeScript types for the frontend
+- Provide better validation for input data
+- Create a more intuitive user interface
+- Ensure type safety across your application
+
 For more detailed examples, please refer to our [Documentation](https://docs.davia.ai/introduction) and the examples provided there.
 
 ## 🎨 Beautiful UI Components
