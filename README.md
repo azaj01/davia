@@ -73,7 +73,7 @@ This command will start a local server, and Davia will typically open a browser 
 
 ### Best Practices for Function Declarations
 
-When working with Davia, it's recommended to explicitly declare input and output types for your functions. This practice not only improves code clarity but also ensures smooth integration with the TypeScript frontend that Davia generates. Here's an example:
+When working with Davia, it's recommended to explicitly declare input and output types for your functions as well as providing a clear docstring. This practice not only improves code clarity but also ensures smooth integration with the TypeScript frontend that Davia generates. Here's an example:
 
 ```python
 from pydantic import BaseModel
@@ -85,19 +85,26 @@ class UserInput(BaseModel):
 
 @app.task
 def calculate_user_score(input_data: UserInput) -> int:
+    """
+    Calculate a user's score based on their profile information.
+
+    The score is computed using the following formula:
+    - Base score: 10 points per character in the name
+    - Age bonus: 2 points per year of age
+    - Preferences bonus: 5 points per preference
+
+    Args:
+        input_data (UserInput): User profile containing name, age, and preferences
+
+    Returns:
+        int: The calculated user score
+    """
     # Example calculation based on user data
     base_score = len(input_data.name) * 10
     age_bonus = input_data.age * 2
     preferences_bonus = len(input_data.preferences) * 5
     return base_score + age_bonus + preferences_bonus
 ```
-
-Using type hints and Pydantic models helps Davia:
-
-- Generate accurate TypeScript types for the frontend
-- Provide better validation for input data
-- Create a more intuitive user interface
-- Ensure type safety across your application
 
 For more detailed examples, please refer to our [Documentation](https://docs.davia.ai/introduction) and the examples provided there.
 
