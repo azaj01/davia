@@ -2,38 +2,12 @@ import os
 import inspect
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import pickle
-from contextlib import asynccontextmanager
 from typing import Callable
 from pathlib import Path
 
 from davia.routers import router
 from davia.main import run_server
 from davia.scalar import get_scalar_api_reference
-
-
-@asynccontextmanager
-async def custom_lifespan(app: FastAPI):
-    # Initialize shared state
-    app.state.global_mem = {}
-
-    # Load state from pickle file if it exists
-    if os.path.exists("./app_state.pickle"):
-        try:
-            with open("./app_state.pickle", "rb") as f:
-                app.state.global_mem = pickle.load(f)
-
-        except Exception:
-            pass
-
-    yield  # Application runs here
-
-    # Save state to pickle file on shutdown
-    try:
-        with open("./app_state.pickle", "wb") as f:
-            pickle.dump(app.state.global_mem, f)
-    except Exception:
-        pass
 
 
 class Davia(FastAPI):
@@ -55,7 +29,6 @@ class Davia(FastAPI):
         if "title" not in kwargs:
             kwargs["title"] = "Davia App"
         super().__init__(
-            lifespan=custom_lifespan,
             redoc_url=None,
             docs_url=None,
             **kwargs,
@@ -73,9 +46,6 @@ class Davia(FastAPI):
         self._tasks = []
         self._graphs = {}
         self.include_router(router)
-
-        # Initialize state
-        self._custom_state = state or {}
 
         # Add Scalar API reference route
         @self.get("/docs", include_in_schema=False)
