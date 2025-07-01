@@ -1,4 +1,4 @@
-<img src="https://tfeifjfahexycwjammtk.supabase.co/storage/v1/object/public/public-material//github-banner.png" alt="Davia Banner" style="border-radius: 20px; width: 100%;" />
+<img src="https://tfeifjfahexycwjammtk.supabase.co/storage/v1/object/public/public-material//github_banner_1.png" alt="Davia Banner" style="border-radius: 20px; width: 100%;" />
 
 <div align="center">
   <h2 style="font-size: 1.8em;">The easiest way to build apps from your Python code</h2>
