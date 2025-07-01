@@ -1,5 +1,7 @@
+<img src="https://tfeifjfahexycwjammtk.supabase.co/storage/v1/object/public/public-material//github-banner.png" alt="Davia Banner" style="border-radius: 20px; width: 100%;" />
+
 <div align="center">
-  <h2>The easiest way to build apps from your Python code</h2>
+  <h2 style="font-size: 1.8em;">The easiest way to build apps from your Python code</h2>
 </div>
 <div align="center">
   <a href="https://pypi.python.org/pypi/davia"><img src="https://img.shields.io/pypi/v/davia.svg" alt="PyPI"></a>
