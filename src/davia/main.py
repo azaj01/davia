@@ -35,7 +35,7 @@ def run_server(
     n_jobs_per_worker: int = 1,
 ):
     local_url = f"http://{host}:{port}"
-    preview_url = "https://davia.ai/dashboard"
+    preview_url = "https://dev.davia.ai/dashboard"
 
     def _open_browser():
         import time
