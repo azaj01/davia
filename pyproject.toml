@@ -29,7 +29,7 @@ dependencies = [
 davia = "davia.cli:app"
 
 [project.urls]
-Homepage = "https://davia.ai"
+Homepage = "https://dev.davia.ai"
 Documentation = "https://docs.davia.ai"
 Repository = "https://github.com/davialabs/davia.git"
 Issues = "https://github.com/davialabs/davia/issues"
