@@ -3,7 +3,12 @@
 <div align="center">
   <h2 style="font-size: 1.8em;">The easiest way to build apps from your Python code</h2>
 </div>
+
+> **⚠️ UNMAINTAINED PROJECT**  
+> This project is no longer actively maintained. While the code remains available for reference and use, no updates, bug fixes, or new features will be provided. Users are encouraged to seek alternative solutions for their needs.
+
 <div align="center">
+<a href="https://pypi.python.org/pypi/davia"><img src="https://img.shields.io/maintenance/no/2025.svg" alt="PyPI"></a>
   <a href="https://pypi.python.org/pypi/davia"><img src="https://img.shields.io/pypi/v/davia.svg" alt="PyPI"></a>
   <a href="https://github.com/davialabs/davia"><img src="https://img.shields.io/pypi/pyversions/davia.svg" alt="versions"></a>
   <a href="https://github.com/davialabs/davia/blob/main/LICENSE"><img src="https://img.shields.io/github/license/davialabs/davia.svg?v" alt="license"></a>
