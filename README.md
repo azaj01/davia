@@ -76,7 +76,7 @@ You can run this application using the Davia CLI:
 davia run my_app.py
 ```
 
-This command will start a local server, and Davia will typically open a browser window pointing to the application's UI, often hosted on a development dashboard like `https://dev.davia.ai/dashboard`.
+This command will start a local server, and Davia will typically open a browser window pointing to the application's UI, often hosted on a development dashboard like `https://davia.ai/dashboard`.
 
 ### Best Practices for Function Declarations
 
